@@ -1,5 +1,6 @@
 import { Buffer } from "buffer";
-export function keyId2UUId(base64KeyId = "OdxXFzfDNCjjRjJbBWZQ5A=="){
+const def =  "OdxXFzfDNCjjRjJbBWZQ5A=="
+export function keyId2UUId(base64KeyId ){
     const buf = Buffer.from(base64KeyId, "base64");
     return [
         buf.toString("hex", 0, 4),
