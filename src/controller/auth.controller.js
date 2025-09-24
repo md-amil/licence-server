@@ -4,30 +4,44 @@ import User from "../models/user.js";
 
 dotenv.config();
 const publicKey = process.env.MJ_APIKEY_PUBLIC;
-const privateKey = process.env.MJ_APIKEY_PRIVATE;
+const privateKey = process.env.MJ_APIKEY_PRIVATE; 
 const token = process.env.MOODLE_TOKEN;
+const twoFactorApiKey = process.env.TWOFACTOR_API_KEY;
 if (!publicKey || !privateKey) throw new Error("Cred not found");
 const mailjet = Mailjet.apiConnect(publicKey, privateKey);
 
 export async function sendOtp(req, res) {
-  const { email,username } = req.body;
+  const { email, username, phone } = req.body;
   try {
-    const userRes = await checkBy('username',username)
-    if(userRes.length) return res.status(400).json({ error: "username already exist" });
-    const emailRes = await checkBy('email',email)
-    if(emailRes.length) return res.status(400).json({ error: "email already exist" });
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); 
+    const userRes = await checkBy("username", username);
+    if (userRes.length)
+      return res.status(400).json({ error: "username already exist" });
+    const emailRes = await checkBy("email", email);
+    if (emailRes.length)
+      return res.status(400).json({ error: "email already exist" });
+    // Generate two different OTPs
+    const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const phoneOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
     let user = await User.findOne({ email });
     if (user) {
-      user.otp = otp;
+      user.emailOtp = emailOtp;
+      user.phoneOtp = phoneOtp;
       user.otpExpires = otpExpires;
       user.verified = false;
+      user.phone = phone;
     } else {
-      user = new User({ email, otp, otpExpires });
+      user = new User({
+        email,
+        phone,
+        emailOtp,
+        phoneOtp,
+        otpExpires,
+        verified: false,
+      });
     }
     await user.save();
-    const resp = await mailjet.post("send", { version: "v3.1" }).request({
+    await mailjet.post("send", { version: "v3.1" }).request({
       Messages: [
         {
           From: {
@@ -35,40 +49,56 @@ export async function sendOtp(req, res) {
             Name: "MyApp",
           },
           To: [{ Email: email }],
-          Subject: "Your Verification Code",
-          HTMLPart: `<h3>Your OTP is:</h3><p><b>${otp}</b></p><p>Valid for 5 minutes.</p>`,
+          Subject: "Your Email Verification Code",
+          HTMLPart: `<h3>Your Email OTP is:</h3><p><b>${emailOtp}</b></p><p>Valid for 5 minutes.</p>`,
         },
       ],
     });
-    console.dir(resp.body, { depth: null });
+    // Send OTP via SMS using 2Factor API
+    if (phone) {
+      const smsUrl = `https://2factor.in/API/V1/${twoFactorApiKey}/SMS/${phone}/${phoneOtp}/test`;
+      const smsResp = await fetch(smsUrl);
+      const smsData = await smsResp.json();
+      console.log("SMS Response:", smsData);
+    }
     res.json({
-      message: "OTP sent successfully, check your email for verification code.",
+      message: "OTP sent successfully to both email and mobile.",
     });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(400).json({ error: err.message });
   }
 }
 
 export async function verifyOtp(req, res) {
-  const { "users[0][email]": email, otp } = req.body;
+  const {
+    "users[0][email]": email,
+    "users[0][phone]": phone,
+    emailOtp,
+    phoneOtp,
+  } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, phone });
     if (!user) return res.status(400).json({ error: "User not found" });
-    if (user.verified) return res.json({ message: "Already verified" });
-    if (user.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+    if (user.emailOtp !== emailOtp)
+      return res.status(400).json({ error: "Invalid Email OTP" });
+    if (user.phoneOtp !== phoneOtp)
+      return res.status(400).json({ error: "Invalid Phone OTP" });
     if (user.otpExpires < Date.now())
       return res.status(400).json({ error: "OTP expired" });
+
     user.verified = true;
-    user.otp = null;
+    user.emailOtp = null;
+    user.phoneOtp = null;
     user.otpExpires = null;
     await user.save();
+
     const moodleResult = await createUser(req.body);
     if (moodleResult.exception)
       return res.status(400).json({ data: moodleResult });
 
     res.status(200).json({
-      message: "Email verified successfully!",
+      message: "Email and phone verified successfully!",
       data: moodleResult,
     });
   } catch (err) {
@@ -78,16 +108,16 @@ export async function verifyOtp(req, res) {
 }
 
 async function checkBy(field, value) {
-    const emailParams = new URLSearchParams({
+  const emailParams = new URLSearchParams({
     wstoken: token,
     wsfunction: "core_user_get_users_by_field",
     moodlewsrestformat: "json",
     field,
     "values[0]": value,
   });
-const url = "https://lms.autogpt.tools/webservice/rest/server.php";
+  const url = "https://lms.autogpt.tools/webservice/rest/server.php";
   const response = await fetch(`${url}?${emailParams.toString()}`);
-  return  response.json();
+  return response.json();
 }
 
 async function createUser(body) {
@@ -97,7 +127,7 @@ async function createUser(body) {
       if (key == "otp" || key == "confirmPassword") continue;
       form.append(key, body[key]);
     }
-    form.append("wstoken",token);
+    form.append("wstoken", token);
     form.append("wsfunction", "core_user_create_users");
     form.append("moodlewsrestformat", "json");
     // Send request to Moodle with fetch
