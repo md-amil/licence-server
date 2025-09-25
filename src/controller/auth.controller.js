@@ -73,7 +73,7 @@ export async function sendOtp(req, res) {
 export async function verifyOtp(req, res) {
   const {
     "users[0][email]": email,
-    "users[0][phone]": phone,
+    "users[0][phone1]": phone,
     emailOtp,
     phoneOtp,
   } = req.body;
