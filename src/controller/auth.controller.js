@@ -124,7 +124,7 @@ async function createUser(body) {
   try {
     const form = new FormData();
     for (const key in body) {
-      if (key == "otp" || key == "confirmPassword") continue;
+      if (["confirmPassword","emailOtp",'phoneOtp'].includes(key)) continue;
       form.append(key, body[key]);
     }
     form.append("wstoken", token);
