@@ -13,12 +13,12 @@ const mailjet = Mailjet.apiConnect(publicKey, privateKey);
 export async function sendOtp(req, res) {
   const { email, username, phone } = req.body;
   try {
-    const userRes = await checkBy("username", username);
-    if (userRes.length)
-      return res.status(400).json({ error: "username already exist" });
-    const emailRes = await checkBy("email", email);
-    if (emailRes.length)
-      return res.status(400).json({ error: "email already exist" });
+    // const userRes = await checkBy("username", username);
+    // if (userRes.length)
+    //   return res.status(400).json({ error: "username already exist" });
+    // const emailRes = await checkBy("email", email);
+    // if (emailRes.length)
+    //   return res.status(400).json({ error: "email already exist" });
     // Generate two different OTPs
     const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
     const phoneOtp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -139,14 +139,26 @@ async function checkBy(field, value) {
 async function createUser(body) {
   try {
     const form = new FormData();
-    for (const key in body) {
-      if (["confirmPassword","emailOtp",'phoneOtp'].includes(key)) continue;
-      form.append(key, body[key]);
-    }
+    // for (const key in body) {
+    //   if (["confirmPassword","emailOtp",'phoneOtp'].includes(key)) continue;
+    //   form.append(key, body[key]);
+    // }
+//     --data-urlencode 'users[0][username]=testuser123' \
+// --data-urlencode 'users[0][password]=Test@12345' \
+// --data-urlencode 'users[0][firstname]=Test' \
+// --data-urlencode 'users[0][lastname]=User' \
+// --data-urlencode 'users[0][email]=testuser123@example.com' \
+    form.append("users[0][username]", body.username);
+    form.append("users[0][password]", body.password);
+    form.append("users[0][firstname]", body.firstname);
+    form.append("users[0][lastname]", body.lastname);
+    form.append("users[0][email]", body.email);
+    form.append("users[0][phone1]", body.phone);
+    form.append("users[0][city]", body.city);
+    form.append("users[0][country]", body.country);
     form.append("wstoken", token);
     form.append("wsfunction", "core_user_create_users");
     form.append("moodlewsrestformat", "json");
-    // Send request to Moodle with fetch
     const response = await fetch(
       "https://lms.autogpt.tools/webservice/rest/server.php",
       {
