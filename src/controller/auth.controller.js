@@ -107,17 +107,33 @@ export async function verifyOtp(req, res) {
   }
 }
 
+export async function existUser(req, res){
+  const {field,value} = req.query
+  const exist = await checkBy(field,value)
+  console.dir({exist},{depth:null})
+  return res.send({
+    exist:!!exist?.length,
+    message:exist?.length ?`${field} already exists` : `${field} does not exist`
+  })
+}
+
+
 async function checkBy(field, value) {
-  const emailParams = new URLSearchParams({
-    wstoken: token,
-    wsfunction: "core_user_get_users_by_field",
-    moodlewsrestformat: "json",
-    field,
-    "values[0]": value,
-  });
   const url = "https://lms.autogpt.tools/webservice/rest/server.php";
-  const response = await fetch(`${url}?${emailParams.toString()}`);
-  return response.json();
+  const params = new URLSearchParams({
+    wstoken: token,
+    wsfunction: "core_user_get_users",
+    moodlewsrestformat: "json",
+    "criteria[0][key]": field,   
+    "criteria[0][value]": value,
+  });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  const data = await response.json();
+  return data?.users;
 }
 
 async function createUser(body) {

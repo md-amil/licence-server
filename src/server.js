@@ -6,8 +6,7 @@ dotenv.config();
 import bodyParser from "body-parser";
 import cors from "cors";
 import { getLicense } from "./controller/license.controller.js";
-import { sendOtp, verifyOtp } from "./controller/auth.controller.js";
-
+import { existUser, sendOtp, verifyOtp } from "./controller/auth.controller.js";
 // MongoDB connection
 const connectDB = async () => {
   try {
@@ -45,6 +44,8 @@ const port = process.env.PORT || 3000;
 
 app.get("/test", (req, res) => res.send("working"));
 app.post("/license", getLicense);
+
+app.get('/auth/exist',existUser)
 app.post("/auth/send-otp", sendOtp);
 app.post("/auth/verify-otp", verifyOtp);
 
