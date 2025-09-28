@@ -4,7 +4,7 @@ import User from "../models/user.js";
 
 dotenv.config();
 const publicKey = process.env.MJ_APIKEY_PUBLIC;
-const privateKey = process.env.MJ_APIKEY_PRIVATE; 
+const privateKey = process.env.MJ_APIKEY_PRIVATE;
 const token = process.env.MOODLE_TOKEN;
 const twoFactorApiKey = process.env.TWOFACTOR_API_KEY;
 if (!publicKey || !privateKey) throw new Error("Cred not found");
@@ -71,12 +71,7 @@ export async function sendOtp(req, res) {
 }
 
 export async function verifyOtp(req, res) {
-  const {
-    "users[0][email]": email,
-    "users[0][phone1]": phone,
-    emailOtp,
-    phoneOtp,
-  } = req.body;
+  const { email, phone, emailOtp, phoneOtp} = req.body;
   try {
     const user = await User.findOne({ email, phone });
     if (!user) return res.status(400).json({ error: "User not found" });
@@ -107,14 +102,39 @@ export async function verifyOtp(req, res) {
   }
 }
 
-export async function existUser(req, res){
-  const {field,value} = req.query
-  const exist = await checkBy(field,value)
-  console.dir({exist},{depth:null})
+export async function existUser(req, res) {
+  const { field, value } = req.query
+  if (field == 'phone') {
+    const response = await checkByPhone(value)
+    console.log(response)
+    return res.send({
+      exist: response.exists,
+      message: response.exists ? `${field} already exists` : `${field} does not exist`
+    });
+  }
+  const exist = await checkBy(field, value)
+  console.dir({ exist }, { depth: null })
   return res.send({
-    exist:!!exist?.length,
-    message:exist?.length ?`${field} already exists` : `${field} does not exist`
+    exist: !!exist?.length,
+    message: exist?.length ? `${field} already exists` : `${field} does not exist`
   })
+}
+
+async function checkByPhone(value) {
+  const url = "https://lms.autogpt.tools/webservice/rest/server.php";
+  const payload = new URLSearchParams({
+    wstoken: token,
+    wsfunction: "coursehook_check_user_by_mobile",
+    moodlewsrestformat: "json",
+    mobile: value,
+  });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: payload.toString(),
+  });
+  const data = await response.json();
+  return data;
 }
 
 
@@ -124,7 +144,7 @@ async function checkBy(field, value) {
     wstoken: token,
     wsfunction: "core_user_get_users",
     moodlewsrestformat: "json",
-    "criteria[0][key]": field,   
+    "criteria[0][key]": field,
     "criteria[0][value]": value,
   });
   const response = await fetch(url, {
@@ -139,15 +159,6 @@ async function checkBy(field, value) {
 async function createUser(body) {
   try {
     const form = new FormData();
-    // for (const key in body) {
-    //   if (["confirmPassword","emailOtp",'phoneOtp'].includes(key)) continue;
-    //   form.append(key, body[key]);
-    // }
-//     --data-urlencode 'users[0][username]=testuser123' \
-// --data-urlencode 'users[0][password]=Test@12345' \
-// --data-urlencode 'users[0][firstname]=Test' \
-// --data-urlencode 'users[0][lastname]=User' \
-// --data-urlencode 'users[0][email]=testuser123@example.com' \
     form.append("users[0][username]", body.username);
     form.append("users[0][password]", body.password);
     form.append("users[0][firstname]", body.firstname);
