@@ -6,7 +6,7 @@ dotenv.config();
 import bodyParser from "body-parser";
 import cors from "cors";
 import { getLicense } from "./controller/license.controller.js";
-import { existUser, sendOtp, verifyOtp } from "./controller/auth.controller.js";
+import { existUser, login, sendOtp, verifyOtp } from "./controller/auth.controller.js";
 // MongoDB connection
 const connectDB = async () => {
   try {
@@ -48,6 +48,7 @@ app.post("/license", getLicense);
 app.get('/auth/exist',existUser)
 app.post("/auth/send-otp", sendOtp);
 app.post("/auth/verify-otp", verifyOtp);
+app.post('/auth/login',login)
 
 app.listen(port, () => {
   console.log(`License Proxy running on http://localhost:${port}`);

@@ -13,13 +13,6 @@ const mailjet = Mailjet.apiConnect(publicKey, privateKey);
 export async function sendOtp(req, res) {
   const { email, username, phone } = req.body;
   try {
-    // const userRes = await checkBy("username", username);
-    // if (userRes.length)
-    //   return res.status(400).json({ error: "username already exist" });
-    // const emailRes = await checkBy("email", email);
-    // if (emailRes.length)
-    //   return res.status(400).json({ error: "email already exist" });
-    // Generate two different OTPs
     const emailOtp = Math.floor(1000 + Math.random() * 9000).toString();
     const phoneOtp = Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
@@ -118,6 +111,42 @@ export async function existUser(req, res) {
     exist: !!exist?.length,
     message: exist?.length ? `${field} already exists` : `${field} does not exist`
   })
+}
+
+
+export async function login(req, res) {
+  const { username, password } = req.body;
+  try {
+    const form = new FormData();
+    form.append("username", username);
+    form.append("password", password);
+    form.append("service", "moodle_mobile_app");
+    form.append("moodlewsrestformat", "json");
+    form.append("wsfunction", "local_sd_login_get_token");
+
+    form.append("wstoken", token);
+
+    const response = await fetch(
+      "https://lms.autogpt.tools/webservice/rest/server.php",
+      {
+        method: "POST",
+        body: form,
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+    const data = await response.json();
+    
+    console.log(data);
+    if (data.exception) {
+      return res.status(400).json(data);
+    }
+    res.json(data);
+  }catch (err) {
+    console.error("Error in login:", err);
+    res.status(400).json({ error: err.message });
+  }
 }
 
 async function checkByPhone(value) {
