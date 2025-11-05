@@ -6,7 +6,9 @@ dotenv.config();
 const publicKey = process.env.MJ_APIKEY_PUBLIC;
 const privateKey = process.env.MJ_APIKEY_PRIVATE;
 const token = process.env.MOODLE_TOKEN;
+const baseUrl = process.env.MOODLE_URL ?? "https://lms.autogpt.tools/webservice/rest/server.php";
 const twoFactorApiKey = process.env.TWOFACTOR_API_KEY;
+
 if (!publicKey || !privateKey) throw new Error("Cred not found");
 const mailjet = Mailjet.apiConnect(publicKey, privateKey);
 
@@ -64,7 +66,7 @@ export async function sendOtp(req, res) {
 }
 
 export async function verifyOtp(req, res) {
-  const { email, phone, emailOtp, phoneOtp} = req.body;
+  const { email, phone, emailOtp, phoneOtp } = req.body;
   try {
     const user = await User.findOne({ email, phone });
     if (!user) return res.status(400).json({ error: "User not found" });
@@ -116,6 +118,7 @@ export async function existUser(req, res) {
 
 export async function login(req, res) {
   const { username, password } = req.body;
+  // return res.json({ message: "Login disabled temporarily" });
   try {
     const form = new FormData();
     form.append("username", username);
@@ -127,7 +130,7 @@ export async function login(req, res) {
     form.append("wstoken", token);
 
     const response = await fetch(
-      "https://lms.autogpt.tools/webservice/rest/server.php",
+      baseUrl,
       {
         method: "POST",
         body: form,
@@ -136,14 +139,24 @@ export async function login(req, res) {
         },
       }
     );
-    const data = await response.json();
-    
-    console.log(data);
-    if (data.exception) {
-      return res.status(400).json(data);
+    const resp = await response.json();
+    if (resp.exception) {
+      return res.status(400).json(resp);
     }
-    res.json(data);
-  }catch (err) {
+    const params = new URLSearchParams({
+      wstoken: resp.token,
+      wsfunction: "core_webservice_get_site_info",
+      moodlewsrestformat: "json",
+    });
+
+    const infoRes = await fetch(`${baseUrl}?${params.toString()}`);
+    if (!infoRes.ok) {
+      return res.status(400).json(infoRes);
+    }
+
+    const {functions,...data} = await infoRes.json();
+    return res.status(200).json({ token:resp.token, siteInfo: data });
+  } catch (err) {
     console.error("Error in login:", err);
     res.status(400).json({ error: err.message });
   }
