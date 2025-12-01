@@ -34,6 +34,7 @@ app.use(
       "X-AxDRM-MessageType",
       "X-AxDRM-TenantId",
       "X-Key-Id", 
+      'X-Require-Hardware-DRM'
     ],
   })
 );
