@@ -19,16 +19,29 @@ export async function getWidevineLicense(req, res) {
   console.log("Received Widevine license request");
   if (!req.body) return res.status(400).send("Empty license request body");
 
-  // const securityLevel = req.headers['x-security-level'];
-  // console.log("Security Level:", securityLevel);
-  // if (securityLevel === 'L3' || !securityLevel) {
-  //   return res.status(403).json({ 
-  //     error: 'Hardware-level DRM (L1) required' 
-  //   });
-  // }
+  // Express lowercases headers, so check both cases for compatibility
+  const drmLevel = req.headers["x-drm-level"] || req.headers["X-DRM-Level"] || "unknown";
+  const requireHardware = req.headers["x-require-hardware-drm"] || req.headers["X-Require-Hardware-DRM"];
+  const acceptSoftware = req.headers["x-accept-software-drm"] || req.headers["X-Accept-Software-DRM"];
+  const keyId = req.headers["x-key-id"] || req.headers["X-Key-Id"];
+  
+  console.log("DRM Level Info:", {
+    drmLevel,
+    requireHardware,
+    acceptSoftware,
+    keyId: keyId ? "present" : "missing",
+    userAgent: req.headers["user-agent"]?.substring(0, 100),
+    allHeaders: Object.keys(req.headers).filter(h => h.toLowerCase().includes('drm') || h.toLowerCase().includes('key'))
+  });
+  
+  // Validate that we have the required keyId
+  if (!keyId) {
+    console.error("Missing X-Key-Id header");
+    return res.status(400).json({ error: "Missing X-Key-Id header" });
+  }
   
   try {
-    const contentKeyId = keyId2UUId(req.headers["x-key-id"]);
+    const contentKeyId = keyId2UUId(keyId);
     const licenseServiceMessage = {
       version: 1,
       com_key_id: communicationKeyId,
