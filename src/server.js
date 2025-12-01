@@ -7,6 +7,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { getLicense } from "./controller/license.controller.js";
 import { existUser, login, sendOtp, verifyOtp } from "./controller/auth.controller.js";
+import { getFairplayCertificate, getFairplayLicense, getPlayReadyLicense, getWidevineLicense } from "./service/licence.service.js";
 // MongoDB connection
 const connectDB = async () => {
   try {
@@ -43,12 +44,23 @@ app.use("/license", bodyParser.raw({ type: "*/*" }));
 const port = process.env.PORT || 3000;
 
 app.get("/test", (req, res) => res.send("working"));
-app.post("/license", getLicense);
+// app.post("/license", getLicense);
 
 app.get('/auth/exist',existUser)
 app.post("/auth/send-otp", sendOtp);
 app.post("/auth/verify-otp", verifyOtp);
 app.post('/auth/login',login)
+
+
+app.post("/license", getLicense);
+
+// DRM-specific endpoints
+app.post("/license/widevine", getWidevineLicense);
+app.post("/license/fairplay", getFairplayLicense);
+app.post("/license/playready", getPlayReadyLicense);
+
+// FairPlay certificate endpoint (required for FairPlay)
+app.get("/fairplay/cert", getFairplayCertificate);
 
 app.listen(port, () => {
   console.log(`License Proxy running on http://localhost:${port}`);
