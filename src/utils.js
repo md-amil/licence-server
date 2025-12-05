@@ -2,6 +2,7 @@ import { Buffer } from "buffer";
 const def =  "OdxXFzfDNCjjRjJbBWZQ5A=="
 export function keyId2UUId(base64KeyId){
     const buf = Buffer.from(base64KeyId, "base64");
+    console.log({bu})
     return [
         buf.toString("hex", 0, 4),
         buf.toString("hex", 4, 6),

@@ -195,7 +195,6 @@ export async function getPlayReadyLicense(req, res) {
 // Universal License Handler (detects DRM type)
 export async function getLicense(req, res) {
   const drmType = req.headers["x-drm-type"] || detectDrmType(req);
-  
   switch (drmType?.toLowerCase()) {
     case "widevine":
       return getWidevineLicense(req, res);
