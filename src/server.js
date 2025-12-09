@@ -27,15 +27,15 @@ const app = express();
 app.use(
   cors({
     origin: "*", // or replace with your frontend domain
-    methods: ["POST", "OPTIONS"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "X-AxDRM-Message",
       "X-AxDRM-MessageType",
       "X-AxDRM-TenantId",
       "X-Key-Id", 
-      'X-Require-Hardware-DRM',
-      'x-drm-type'
+      "X-Require-Hardware-DRM",
+      "X-DRM-Type"  // Added for multi-DRM support (widevine/playready/fairplay)
     ],
   })
 );

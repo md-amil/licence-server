@@ -3,16 +3,16 @@ import { keyId2UUId } from "../utils.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const tenantId = process.env.TENANT_ID;
+const tenantId = process.env.TENANT_ID || "90bb8ebf-571e-4653-96b9-0e328e776c74";
 const managementKey = process.env.MANAGEMENT_KEY;
-const communicationKeyId = process.env.COMMUNICATION_KEY_ID;
+const communicationKeyId = process.env.COMMUNICATION_KEY_ID || "7df899ea-aba1-46a2-98c8-b37d0116fbe0";
 const communicationKeyBase64 = process.env.COMMUNICATION_KEY;
 const communicationKey = Buffer.from(communicationKeyBase64, "base64");
 
-// DRM-specific URLs
-const widevineUrl = process.env.WIDEVINE_LICENSE_URL || "https://a684b6fc.drm-widevine-licensing.axprod.net/AcquireLicense";
-const fairplayUrl = process.env.FAIRPLAY_LICENSE_URL || "https://a684b6fc.drm-fairplay-licensing.axprod.net/AcquireLicense";
-const playreadyUrl = process.env.PLAYREADY_LICENSE_URL || "https://a684b6fc.drm-playready-licensing.axprod.net/AcquireLicense";
+// DRM-specific URLs - Updated to correct tenant (90bb8ebf)
+const widevineUrl = process.env.WIDEVINE_LICENSE_URL || "https://90bb8ebf.drm-widevine-licensing.axprod.net/AcquireLicense";
+const fairplayUrl = process.env.FAIRPLAY_LICENSE_URL || "https://90bb8ebf.drm-fairplay-licensing.axprod.net/AcquireLicense";
+const playreadyUrl = process.env.PLAYREADY_LICENSE_URL || "https://90bb8ebf.drm-playready-licensing.axprod.net/AcquireLicense";
 
 // Widevine License Handler
 export async function getWidevineLicense(req, res) {
@@ -195,6 +195,7 @@ export async function getPlayReadyLicense(req, res) {
 // Universal License Handler (detects DRM type)
 export async function getLicense(req, res) {
   const drmType = req.headers["x-drm-type"] || detectDrmType(req);
+  
   switch (drmType?.toLowerCase()) {
     case "widevine":
       return getWidevineLicense(req, res);
