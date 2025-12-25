@@ -1,7 +1,8 @@
 import Mailjet from "node-mailjet";
 import dotenv from "dotenv";
 import User from "../models/user.js";
-
+import  sgMail from '@sendgrid/mail';
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 dotenv.config();
 const publicKey = process.env.MJ_APIKEY_PUBLIC;
 const privateKey = process.env.MJ_APIKEY_PRIVATE;
@@ -10,7 +11,7 @@ const baseUrl = process.env.MOODLE_URL ?? "https://lms.autogpt.tools/webservice/
 const twoFactorApiKey = process.env.TWOFACTOR_API_KEY;
 
 if (!publicKey || !privateKey) throw new Error("Cred not found");
-const mailjet = Mailjet.apiConnect(publicKey, privateKey);
+// const mailjet = Mailjet.apiConnect(publicKey, privateKey);
 
 export async function sendOtp(req, res) {
   const { email, username, phone } = req.body;
@@ -36,19 +37,20 @@ export async function sendOtp(req, res) {
       });
     }
     await user.save();
-    await mailjet.post("send", { version: "v3.1" }).request({
-      Messages: [
-        {
-          From: {
-            Email: process.env.MJ_SENDER_EMAIL,
-            Name: "MyApp",
-          },
-          To: [{ Email: email }],
-          Subject: "Your Email Verification Code",
-          HTMLPart: `<h3>Your Email OTP is:</h3><p><b>${emailOtp}</b></p><p>Valid for 5 minutes.</p>`,
-        },
-      ],
-    });
+    await sendOtpMail(email,emailOtp)
+    // await mailjet.post("send", { version: "v3.1" }).request({
+    //   Messages: [
+    //     {
+    //       From: {
+    //         Email: process.env.MJ_SENDER_EMAIL,
+    //         Name: "MyApp",
+    //       },
+    //       To: [{ Email: email }],
+    //       Subject: "Your Email Verification Code",
+    //       HTMLPart: `<h3>Your Email OTP is:</h3><p><b>${emailOtp}</b></p><p>Valid for 5 minutes.</p>`,
+    //     },
+    //   ],
+    // });
     // Send OTP via SMS using 2Factor API
     if (phone) {
       const smsUrl = `https://2factor.in/API/V1/${twoFactorApiKey}/SMS/${phone}/${phoneOtp}/test`;
@@ -60,9 +62,20 @@ export async function sendOtp(req, res) {
       message: "OTP sent successfully to both email and mobile.",
     });
   } catch (err) {
-    console.log(err);
+    console.log(err.response.body);
     res.status(400).json({ error: err.message });
   }
+}
+
+async function sendOtpMail(to,emailOtp){
+const msg = {
+  to, 
+  from:  process.env.MJ_SENDER_EMAIL, // Change to your verified sender
+  subject: 'Sending with SendGrid is Fun',
+  text: "Your Email Verification Code",
+  html:  `<h3>Your Email OTP is:</h3><p><b>${emailOtp}</b></p><p>Valid for 5 minutes.</p>`,
+}
+return sgMail.send(msg)
 }
 
 export async function verifyOtp(req, res) {
@@ -157,7 +170,7 @@ export async function login(req, res) {
     const {functions,...data} = await infoRes.json();
     return res.status(200).json({ token:resp.token, siteInfo: data });
   } catch (err) {
-    console.error("Error in login:", err);
+    console.error("Error in login:", err.response);
     res.status(400).json({ error: err.message });
   }
 }
