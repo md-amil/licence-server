@@ -79,7 +79,7 @@ axios@^1.12.0:
     form-data "^4.0.4"
     proxy-from-env "^1.1.0"
 
-axios@^1.6.0, axios@^1.8.1:
+axios@^1.6.0:
   version "1.11.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.11.0.tgz#c2ec219e35e414c025b2095e8b8280278478fdb6"
   integrity sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==
@@ -766,12 +766,12 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-mailjet@^6.0.9:
-  version "6.0.9"
-  resolved "https://registry.yarnpkg.com/node-mailjet/-/node-mailjet-6.0.9.tgz#6ae26b3192f66c49c8536ed98a80b755afe28b26"
-  integrity sha512-WGovS3g+2R/02IkD9/EWNvItRVhei7ltmh40JN53cozna41Ug/T3oKOAehBnV0B6Egx1H6L565HbeffUE7DYWg==
+node-mailjet@^6.0.11:
+  version "6.0.11"
+  resolved "https://registry.yarnpkg.com/node-mailjet/-/node-mailjet-6.0.11.tgz#f149dc79ff7cbdee0ff47b1713530d861b8b75ea"
+  integrity sha512-5UaawWhpJc1uFxUl9a07jE8a4ZOax5hj7XYC0LFYyWOP8Rp0I8XvjbiQ6gy/ns7KSw0hqmjytP85GQsdVGEx5g==
   dependencies:
-    axios "^1.8.1"
+    axios "^1.12.0"
     json-bigint "^1.0.0"
     url-join "^4.0.0"
 
